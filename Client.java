@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
@@ -23,6 +24,7 @@ import java.util.Base64;
 import java.util.Scanner;
 
 import javax.crypto.KeyAgreement;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,8 +34,9 @@ public class Client {
    public static void main(String[] args) throws Exception {
 
       System.out.println("Client");
-
       SecretKey sharedKey = clientSharedKey();
+      clientAuthenticate(sharedKey);
+      
       
    }
   
@@ -107,4 +110,26 @@ public class Client {
       }
       return s;
    }
+
+	static void clientAuthenticate(SecretKey sharedKey) throws Exception {
+		String hmacMessage = "dcsdcjdnjcccscsCSECCESCEcescee";
+
+	      // Socket
+	      InetAddress inet = InetAddress.getByName("localhost");
+	      Socket s = new Socket(inet, 2001);
+
+	      ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+	      ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+	      
+	      // send hmac message as string
+	      oos.writeObject(hmacMessage);
+			
+	      Mac clientMac = Mac.getInstance("HmacSHA256");
+	      clientMac.init(sharedKey);
+	      byte[] clientHmacSignature = clientMac.doFinal(hmacMessage.getBytes());
+	      oos.writeObject(clientHmacSignature);
+			
+	}
+	
+
 }

@@ -18,6 +18,7 @@ import java.util.Base64;
 import java.util.Scanner;
 
 import javax.crypto.KeyAgreement;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -29,14 +30,15 @@ public class Server {
 
 
 			SecretKey sharedKey = serverSharedKey();
+			serverAuthenticate(sharedKey);
 			
 		    
 			//Declare EncDec object for shared key decryption later.
-			EncDec encDecObject = new EncDec();
+			//EncDec encDecObject = new EncDec();
 			//Uncomment if you want to view list of algorithms
 			//encDecObject.listAlgos();
-			byte[] test1 = encDecObject.encryptData("hide me", sharedKey);
-			System.out.println(encDecObject.decryptData(test1, sharedKey));
+			//byte[] test1 = encDecObject.encryptData("hide me", sharedKey);
+			//System.out.println(encDecObject.decryptData(test1, sharedKey));
 
 		}
 	
@@ -46,7 +48,7 @@ public class Server {
 			Socket s;
 			ServerSocket ss = new ServerSocket(2000);
 			while (true) {
-				System.out.println("Server: waiting for connection ..");
+				System.out.println("Server: waiting for key exchange ..");
 				// Socket
 				s = ss.accept();
 				ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
@@ -86,9 +88,41 @@ public class Server {
 				// Base64 encode the Secret key and print it out,  Un-comment to view server's key to compare with clients
 			    // String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
 			    // System.out.println("Server encoded key: " + encodedKey);
-				    
 				return secretKey;
 			}
 	}
 
+	static void serverAuthenticate(SecretKey sharedKey) throws Exception {
+		//String hmacMessage = "dcsdcjdnjcccscsCSECCESCEcescee";
+
+	
+		Socket s;
+		ServerSocket ss = new ServerSocket(2001);
+		while (true) {
+			System.out.println("Server: waiting for client Authentication ..");
+			// Socket
+			s = ss.accept();
+			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+			
+			String hmacMessage = (String) ois.readObject();
+			System.out.println("Received HMAC Message "+ hmacMessage);
+			
+			Mac serverMac = Mac.getInstance("HmacSHA256");
+			serverMac.init(sharedKey);
+			byte[] serverHmacSignature = serverMac.doFinal(hmacMessage.getBytes());
+			
+			byte[] clientHmacSignature = (byte[]) ois.readObject();
+			
+			if (serverHmacSignature == clientHmacSignature){
+				System.out.println("Client Authenticated");
+			}
+			//String hmac1 = Base64.getEncoder().encodeToString(serverHmacSignature);
+			//String hmac2 = Base64.getEncoder().encodeToString(clientHmacSignature);
+			//System.out.println(hmac1);
+			//System.out.println(hmac2);
+			
+			
+	}
+	}
 }
