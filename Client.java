@@ -33,51 +33,61 @@ public class Client {
 
       System.out.println("Client");
 
-      // Socket
-      InetAddress inet = InetAddress.getByName("localhost");
-      Socket s = new Socket(inet, 2000);
-
-      ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-      ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-      // get DH params as string
-      String params = generateParams();
-      
-      // send DH params as string
-      oos.writeObject(params);
-      
-      // create DHParameterSpec object
-      // Retrieve DH Parameters from generateParams method.
-      String[] values = params.split(",");
-      BigInteger clientPrime = new BigInteger(values[0]);
-      BigInteger clientGen = new BigInteger(values[1]);
-      int clientSize = Integer.parseInt(values[2]);
-      DHParameterSpec dhClientSpec = new DHParameterSpec(clientPrime, clientGen, clientSize);
-      
-      // Generate a DH key pair (using DHParameterSpec object)
-      KeyPairGenerator clientKeyGen = KeyPairGenerator.getInstance("DH");
-      clientKeyGen.initialize(dhClientSpec);
-      KeyPair clientKeyPair = clientKeyGen.generateKeyPair();
-      PrivateKey clientPrivateKey = clientKeyPair.getPrivate();
-      PublicKey clientPublicKey = clientKeyPair.getPublic();
-    
-      // send own public key using oos.
-      oos.writeObject(clientPublicKey);
-    
-      // read servers public key using ois. and Downcast to PublicKey
-      PublicKey serverPublicKey = (PublicKey) ois.readObject();
-
-      // generate symmetric key
-      KeyAgreement ka = KeyAgreement.getInstance("DH");
-      ka.init(clientPrivateKey);
-      ka.doPhase(serverPublicKey, true);
-      byte[] rawValue = ka.generateSecret();
-      SecretKey secretKey = new SecretKeySpec(rawValue, 0, 16, "AES");
-
-      // Base64 encode the secret key and print
-      String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
-      System.out.println("Client encoded key: " + encodedKey);
+      SecretKey sharedKey = clientSharedKey();
       
    }
+  
+   
+	// Function to generate shared key with server using DH key exchange
+	static SecretKey clientSharedKey() throws Exception{
+		
+	      // Socket
+	      InetAddress inet = InetAddress.getByName("localhost");
+	      Socket s = new Socket(inet, 2000);
+
+	      ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+	      ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+	      // get DH params as string
+	      String params = generateParams();
+	      
+	      // send DH params as string
+	      oos.writeObject(params);
+	      
+	      // create DHParameterSpec object
+	      // Retrieve DH Parameters from generateParams method.
+	      String[] values = params.split(",");
+	      BigInteger clientPrime = new BigInteger(values[0]);
+	      BigInteger clientGen = new BigInteger(values[1]);
+	      int clientSize = Integer.parseInt(values[2]);
+	      DHParameterSpec dhClientSpec = new DHParameterSpec(clientPrime, clientGen, clientSize);
+	      
+	      // Generate a DH key pair (using DHParameterSpec object)
+	      KeyPairGenerator clientKeyGen = KeyPairGenerator.getInstance("DH");
+	      clientKeyGen.initialize(dhClientSpec);
+	      KeyPair clientKeyPair = clientKeyGen.generateKeyPair();
+	      PrivateKey clientPrivateKey = clientKeyPair.getPrivate();
+	      PublicKey clientPublicKey = clientKeyPair.getPublic();
+	    
+	      // send own public key using oos.
+	      oos.writeObject(clientPublicKey);
+	    
+	      // read servers public key using ois. and Downcast to PublicKey
+	      PublicKey serverPublicKey = (PublicKey) ois.readObject();
+
+	      // generate symmetric key
+	      KeyAgreement ka = KeyAgreement.getInstance("DH");
+	      ka.init(clientPrivateKey);
+	      ka.doPhase(serverPublicKey, true);
+	      byte[] rawValue = ka.generateSecret();
+	      SecretKey secretKey = new SecretKeySpec(rawValue, 0, 16, "AES");
+
+	      // Base64 encode the secret key and print, Un-comment to view client's key to compare with servers
+	      // String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
+	      // System.out.println("Client encoded key: " + encodedKey);
+	      
+	      return secretKey;
+		
+	}
 
    public static String generateParams() {
 
