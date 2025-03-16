@@ -76,6 +76,8 @@ public class Client {
 	    
 	      // read servers public key using ois. and Downcast to PublicKey
 	      PublicKey serverPublicKey = (PublicKey) ois.readObject();
+	      // close socket
+	      s.close();
 
 	      // generate symmetric key
 	      KeyAgreement ka = KeyAgreement.getInstance("DH");
@@ -116,10 +118,10 @@ public class Client {
 
 	      // Socket
 	      InetAddress inet = InetAddress.getByName("localhost");
-	      Socket s = new Socket(inet, 2001);
+	      Socket s2 = new Socket(inet, 2001);
 
-	      ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-	      ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+	      ObjectOutputStream oos = new ObjectOutputStream(s2.getOutputStream());
+	      ObjectInputStream ois = new ObjectInputStream(s2.getInputStream());
 	      
 	      // send hmac message as string
 	      oos.writeObject(hmacMessage);
@@ -128,7 +130,8 @@ public class Client {
 	      clientMac.init(sharedKey);
 	      byte[] clientHmacSignature = clientMac.doFinal(hmacMessage.getBytes());
 	      oos.writeObject(clientHmacSignature);
-			
+	      // close socket
+	      s2.close();			
 	}
 	
 

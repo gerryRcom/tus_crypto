@@ -14,6 +14,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Scanner;
 
@@ -30,7 +31,13 @@ public class Server {
 
 
 			SecretKey sharedKey = serverSharedKey();
-			serverAuthenticate(sharedKey);
+			
+			if(serverAuthenticate(sharedKey)) {
+				System.out.println("Client and server sucessfully authenticated.");
+			}
+			else {
+				System.out.println("Client and server not authenticated, exiting.");
+			}
 			
 		    
 			//Declare EncDec object for shared key decryption later.
@@ -92,18 +99,18 @@ public class Server {
 			}
 	}
 
-	static void serverAuthenticate(SecretKey sharedKey) throws Exception {
+	static boolean serverAuthenticate(SecretKey sharedKey) throws Exception {
 		//String hmacMessage = "dcsdcjdnjcccscsCSECCESCEcescee";
 
 	
-		Socket s;
+		Socket s2;
 		ServerSocket ss = new ServerSocket(2001);
 		while (true) {
 			System.out.println("Server: waiting for client Authentication ..");
 			// Socket
-			s = ss.accept();
-			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+			s2 = ss.accept();
+			ObjectOutputStream oos = new ObjectOutputStream(s2.getOutputStream());
+			ObjectInputStream ois = new ObjectInputStream(s2.getInputStream());
 			
 			String hmacMessage = (String) ois.readObject();
 			System.out.println("Received HMAC Message "+ hmacMessage);
@@ -114,14 +121,17 @@ public class Server {
 			
 			byte[] clientHmacSignature = (byte[]) ois.readObject();
 			
-			if (serverHmacSignature == clientHmacSignature){
-				System.out.println("Client Authenticated");
+			if (Arrays.equals(serverHmacSignature, clientHmacSignature)){
+				//System.out.println("Client Authenticated");
+				//String serverMac = Base64.getEncoder().encodeToString(serverHmacSignature);
+				//String clientMac = Base64.getEncoder().encodeToString(clientHmacSignature);
+				//System.out.println(serverMac);
+				//System.out.println(clientMac);
+				return true;
 			}
-			//String hmac1 = Base64.getEncoder().encodeToString(serverHmacSignature);
-			//String hmac2 = Base64.getEncoder().encodeToString(clientHmacSignature);
-			//System.out.println(hmac1);
-			//System.out.println(hmac2);
-			
+			else {
+				return false;
+			}
 			
 	}
 	}
