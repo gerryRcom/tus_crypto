@@ -2,7 +2,8 @@ package tus_crypto;
 
 import java.io.Serializable; 
 
-public class Asset implements Serializable {
+class Asset implements Serializable {
+	private static final long serialVersionUID = -6186645918087808772L;
 	// Declare Asset Variables, declare as private to improve encapsulation.
 	private String assetType = "";
 	private String assetLocation = "";
@@ -13,6 +14,12 @@ public class Asset implements Serializable {
 		setAssetType(assetType);
 		setAssetLocation(assetLocation);
 		setAssetValue(assetValue);		
+	}
+	
+	// Add toString override method to output asset details.
+	public String toString() {
+		String assetDetails = ("Type: "+ getAssetType()+". Location: "+getAssetLocation()+". Value: "+getAssetValue());
+		return assetDetails;
 	}
 
 	// Create Getters and Setters for each Asset variable
