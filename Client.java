@@ -1,30 +1,21 @@
 package tus_crypto;
 
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Scanner;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.Mac;
+import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -46,8 +37,9 @@ public class Client {
 	   System.out.println("Client: ################################");
 	   System.out.println("Client: Begining client/ server authentication");
 	   clientAuthenticate(sharedKey, oos, ois);
-      
-      
+	   Asset newAsset = new Asset("Server", "Building4", 1599);
+	   sendObject(newAsset, sharedKey, oos);
+	   
    }
   
    
@@ -77,12 +69,12 @@ public class Client {
 	      PublicKey clientPublicKey = clientKeyPair.getPublic();
 	    
 	      // send own public key using oos.
-	      System.out.println("Client: Sending Public Key: "+clientPublicKey);
+	      System.out.println("Client: Sending Public Key: "+clientPublicKey.hashCode());
 	      oos.writeObject(clientPublicKey);
 	    
 	      // read servers public key using ois. and Downcast to PublicKey
 	      PublicKey serverPublicKey = (PublicKey) ois.readObject();
-	      System.out.println("Client: Receiving Server's Public Key: "+serverPublicKey);
+	      System.out.println("Client: Receiving Server's Public Key: "+serverPublicKey.hashCode());
 	      // close socket
 	      //s.close();
 
@@ -128,9 +120,26 @@ public class Client {
 	      Mac clientMac = Mac.getInstance("HmacSHA256");
 	      clientMac.init(sharedKey);
 	      byte[] clientHmacSignature = clientMac.doFinal(hmacMessage.getBytes());
-	      System.out.println("Client: Sending HMAC signature to server: "+clientHmacSignature);
+	      System.out.println("Client: Sending HMAC signature to server: "+clientHmacSignature.hashCode());
 	      oos.writeObject(clientHmacSignature);
 	
+	}
+	
+	static void sendObject(Asset assetToSend, SecretKey sharedKey, ObjectOutputStream oos) {
+	     String ALGORITHM = "AES";
+	     try {
+		     Cipher sendingCipher = Cipher.getInstance(ALGORITHM);
+		     // Initialize the cipher for encryption with the secret key
+		     sendingCipher.init(Cipher.ENCRYPT_MODE, sharedKey);
+		     // Encrypt the object using the SealedObject class
+		     SealedObject objectoToSend = new SealedObject(assetToSend, sendingCipher);
+		     // Send the encrypted object (so) by writing it on the output stream oos
+		     oos.writeObject(objectoToSend);
+		     System.out.println("Client: Sending encrypted object to server");
+	     }	
+	     catch(Exception e){
+				System.out.println("Client: Error sending encrypted object.");
+			}
 	}
 	
 
