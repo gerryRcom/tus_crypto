@@ -1,6 +1,8 @@
 package tus_crypto;
 
-public class Asset {
+import java.io.Serializable; 
+
+public class Asset implements Serializable {
 	// Declare Asset Variables, declare as private to improve encapsulation.
 	private String assetType = "";
 	private String assetLocation = "";

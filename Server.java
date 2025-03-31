@@ -28,11 +28,16 @@ public class Server {
 
 	public static void main(String[] args) throws Exception {
 
+		// open socket and streams for use throughout communications
+		ServerSocket ss = new ServerSocket(2000);
+		Socket s = ss.accept();
+		ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+		ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
 
-
-			SecretKey sharedKey = serverSharedKey();
+			SecretKey sharedKey = serverSharedKey(oos, ois);
+			System.out.println("Server: Secret Key generated: "+sharedKey.hashCode());
 			
-			if(serverAuthenticate(sharedKey)) {
+			if(serverAuthenticate(sharedKey,oos, ois)) {
 				System.out.println("Client and server sucessfully authenticated.");
 			}
 			else {
@@ -50,18 +55,14 @@ public class Server {
 		}
 	
 	// Function to generate shared key with client using DH key exchange
-	static SecretKey serverSharedKey() throws Exception{
+	static SecretKey serverSharedKey(ObjectOutputStream oos, ObjectInputStream ois) throws Exception{
 		
-			Socket s;
-			ServerSocket ss = new ServerSocket(2000);
 			while (true) {
 				System.out.println("Server: waiting for key exchange ..");
-				// Socket
-				s = ss.accept();
-				ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+
 		
 				// Read DH params as string
+				System.out.println("Server: Receiving DH Parameters from Client");
 				String dhParams = (String) ois.readObject();
 				// create DHParameterSpec object
 				String[] values = dhParams.split(",");
@@ -81,9 +82,12 @@ public class Server {
 				      
 				// read client public key using ois. and Downcast to PublicKey
 				PublicKey clientPublicKey = (PublicKey) ois.readObject();
+				System.out.println("Server: Receiving Client's public key: "+clientPublicKey);
+				
 
 				// send own public key
 				oos.writeObject(serverPublicKey);
+				System.out.println("Server: Sending Public Key: "+serverPublicKey);
 
 				// generate symmetric key
 			    KeyAgreement ka = KeyAgreement.getInstance("DH");
@@ -92,25 +96,15 @@ public class Server {
 			    byte[] rawValue = ka.generateSecret();
 			    SecretKey secretKey = new SecretKeySpec(rawValue, 0, 16, "AES");
 
-				// Base64 encode the Secret key and print it out,  Un-comment to view server's key to compare with clients
-			    // String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
-			    // System.out.println("Server encoded key: " + encodedKey);
+			    // Return key
 				return secretKey;
 			}
 	}
 
-	static boolean serverAuthenticate(SecretKey sharedKey) throws Exception {
-		//String hmacMessage = "dcsdcjdnjcccscsCSECCESCEcescee";
+	static boolean serverAuthenticate(SecretKey sharedKey, ObjectOutputStream oos, ObjectInputStream ois) throws Exception {
 
-	
-		Socket s2;
-		ServerSocket ss = new ServerSocket(2001);
 		while (true) {
 			System.out.println("Server: waiting for client Authentication ..");
-			// Socket
-			s2 = ss.accept();
-			ObjectOutputStream oos = new ObjectOutputStream(s2.getOutputStream());
-			ObjectInputStream ois = new ObjectInputStream(s2.getInputStream());
 			
 			String hmacMessage = (String) ois.readObject();
 			System.out.println("Received HMAC Message "+ hmacMessage);

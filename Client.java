@@ -32,28 +32,33 @@ import javax.crypto.spec.SecretKeySpec;
 public class Client {
 
    public static void main(String[] args) throws Exception {
-
-      System.out.println("Client");
-      SecretKey sharedKey = clientSharedKey();
-      clientAuthenticate(sharedKey);
+	   
+	   // open socket and streams for use throughout communications
+	   InetAddress inet = InetAddress.getByName("localhost");
+	   Socket s = new Socket(inet, 2000);
+	   ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+	   ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+  
+	   System.out.println("Client: Running...");
+	   System.out.println("Client: Configuring Shared Key");
+	   SecretKey sharedKey = clientSharedKey(oos, ois);
+	   System.out.println("Client: Secret Key generated: "+sharedKey.hashCode());
+	   System.out.println("Client: ################################");
+	   System.out.println("Client: Begining client/ server authentication");
+	   clientAuthenticate(sharedKey, oos, ois);
       
       
    }
   
    
 	// Function to generate shared key with server using DH key exchange
-	static SecretKey clientSharedKey() throws Exception{
+	static SecretKey clientSharedKey(ObjectOutputStream oos, ObjectInputStream ois) throws Exception{
 		
-	      // Socket
-	      InetAddress inet = InetAddress.getByName("localhost");
-	      Socket s = new Socket(inet, 2000);
-
-	      ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-	      ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
 	      // get DH params as string
 	      String params = generateParams();
 	      
 	      // send DH params as string
+	      System.out.println("Client: Sending DH Parameters to Server");
 	      oos.writeObject(params);
 	      
 	      // create DHParameterSpec object
@@ -72,12 +77,14 @@ public class Client {
 	      PublicKey clientPublicKey = clientKeyPair.getPublic();
 	    
 	      // send own public key using oos.
+	      System.out.println("Client: Sending Public Key: "+clientPublicKey);
 	      oos.writeObject(clientPublicKey);
 	    
 	      // read servers public key using ois. and Downcast to PublicKey
 	      PublicKey serverPublicKey = (PublicKey) ois.readObject();
+	      System.out.println("Client: Receiving Server's Public Key: "+serverPublicKey);
 	      // close socket
-	      s.close();
+	      //s.close();
 
 	      // generate symmetric key
 	      KeyAgreement ka = KeyAgreement.getInstance("DH");
@@ -86,10 +93,7 @@ public class Client {
 	      byte[] rawValue = ka.generateSecret();
 	      SecretKey secretKey = new SecretKeySpec(rawValue, 0, 16, "AES");
 
-	      // Base64 encode the secret key and print, Un-comment to view client's key to compare with servers
-	      // String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
-	      // System.out.println("Client encoded key: " + encodedKey);
-	      
+	      // return key
 	      return secretKey;
 		
 	}
@@ -113,25 +117,20 @@ public class Client {
       return s;
    }
 
-	static void clientAuthenticate(SecretKey sharedKey) throws Exception {
+	static void clientAuthenticate(SecretKey sharedKey, ObjectOutputStream oos, ObjectInputStream ois) throws Exception {
+		// hmac message for use during authentication
 		String hmacMessage = "dcsdcjdnjcccscsCSECCESCEcescee";
-
-	      // Socket
-	      InetAddress inet = InetAddress.getByName("localhost");
-	      Socket s2 = new Socket(inet, 2001);
-
-	      ObjectOutputStream oos = new ObjectOutputStream(s2.getOutputStream());
-	      ObjectInputStream ois = new ObjectInputStream(s2.getInputStream());
 	      
 	      // send hmac message as string
+	      System.out.println("Client: Sending HMAC message to server: "+hmacMessage);
 	      oos.writeObject(hmacMessage);
 			
 	      Mac clientMac = Mac.getInstance("HmacSHA256");
 	      clientMac.init(sharedKey);
 	      byte[] clientHmacSignature = clientMac.doFinal(hmacMessage.getBytes());
+	      System.out.println("Client: Sending HMAC signature to server: "+clientHmacSignature);
 	      oos.writeObject(clientHmacSignature);
-	      // close socket
-	      s2.close();			
+	
 	}
 	
 
