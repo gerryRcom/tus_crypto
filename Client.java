@@ -29,14 +29,16 @@ public class Client {
 	   Socket s = new Socket(inet, 2000);
 	   ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
 	   ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-  
+	   
+	   System.out.println("============= Client: Key Exchange ==============");
 	   System.out.println("Client: Running...");
 	   System.out.println("Client: Configuring Shared Key");
 	   SecretKey sharedKey = clientSharedKey(oos, ois);
 	   System.out.println("Client: Secret Key generated: "+sharedKey.hashCode());
-	   System.out.println("Client: ################################");
+	   System.out.println("============= Client: Authentication ==============");
 	   System.out.println("Client: Begining client/ server authentication");
 	   clientAuthenticate(sharedKey, oos, ois);
+	   System.out.println("=========== Client: Object Transmission ============");
 	   Asset newAsset = new Asset("Server", "Building4", 1599);
 	   sendObject(newAsset, sharedKey, oos);
 	   
@@ -135,6 +137,7 @@ public class Client {
 		     SealedObject objectoToSend = new SealedObject(assetToSend, sendingCipher);
 		     // Send the encrypted object (so) by writing it on the output stream oos
 		     oos.writeObject(objectoToSend);
+		     System.out.println("Client: Sending Asset: "+ assetToSend.toString());
 		     System.out.println("Client: Sending encrypted object to server");
 	     }	
 	     catch(Exception e){

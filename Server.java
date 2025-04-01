@@ -24,6 +24,7 @@ public class Server {
 	public static void main(String[] args) throws Exception {
 
 		// open socket and streams for use throughout communications
+		System.out.println("============== Server: Key Exchange ==============");
 		System.out.println("Server: waiting for key exchange ..");
 		ServerSocket ss = new ServerSocket(2000);
 		Socket s = ss.accept();
@@ -33,9 +34,11 @@ public class Server {
 
 		SecretKey sharedKey = serverSharedKey(oos, ois);
 		System.out.println("Server: Secret Key generated: "+sharedKey.hashCode());
+		System.out.println("============== Server: Authentication ==============");
 			
 		if(serverAuthenticate(sharedKey,oos, ois)) {
-			System.out.println("Client and server sucessfully authenticated.");
+			System.out.println("Client= and server sucessfully authenticated.");
+			System.out.println("========== Server: Object Transmission ============");
 			receiveObject(sharedKey, ois);
 		}
 		else {
