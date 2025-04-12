@@ -137,7 +137,7 @@ public class Client {
 		     SealedObject objectoToSend = new SealedObject(assetToSend, sendingCipher);
 		     // Send the encrypted object (so) by writing it on the output stream oos
 		     oos.writeObject(objectoToSend);
-		     System.out.println("Client: Sending Asset: "+ assetToSend.toString());
+		     System.out.println("Client: Encrypting Asset: "+ assetToSend.toString());
 		     System.out.println("Client: Sending encrypted object to server");
 	     }	
 	     catch(Exception e){

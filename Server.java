@@ -51,10 +51,7 @@ public class Server {
 	// Function to generate shared key with client using DH key exchange
 	static SecretKey serverSharedKey(ObjectOutputStream oos, ObjectInputStream ois) throws Exception{
 		
-			while (true) {
-				
-
-		
+			while (true) {	
 				// Read DH params as string
 				System.out.println("Server: Receiving DH Parameters from Client");
 				String dhParams = (String) ois.readObject();
